@@ -2,9 +2,10 @@ use std::io::stdin;
 use std::iter::Iterator;
 use std::str::FromStr;
 
-pub fn build_game() -> Game {
+pub fn build_game(form: Forms) -> Game {
     Game {
-        field: [[Some(Forms::Circle), None, None], [None, Some(Forms::Cross), None], [None, None, None]],
+        field: [[None, None, None], [None, None, None], [None, None, None]],
+        player_form: form
     }
 }
 
@@ -14,33 +15,40 @@ pub enum Forms {
 }
 
 pub struct Game {
+    player_form: Forms,
     field: [[Option<Forms>; 3]; 3],
 }
 
 impl Game {
     pub fn run(&mut self) {
-        // loop {
+        loop {
             self.draw();
-            // self.input();
-        // }
+            self.input();
+        }
     }
 
     fn draw(&self) {
         print!("{}[2J", 27 as char); // wipe terminal
         println!("{}", self.field());
-        println!("\n\nВ какую клетку вы хотите поставить X:")
+        println!("\n\nВ какую клетку вы хотите поставить {}?", match self.player_form {
+            Forms::Cross => "x",
+            Forms::Circle => "o",
+        });
     }
 
-    // fn input(&mut self) {
-    //     let mut index = String::new();
-    //     stdin().read_line(&mut index).expect("Неправильная строка!");
-    //     let index: usize = index.parse().expect("Нужно ввести число!");
-    //     if (1usize >= index) && (index <= 9usize) {
-    //         self.change_field(index)
-    //     } else {
-    //         panic!("Плохой индекс!")
-    //     }
-    // }
+    fn input(&mut self) {
+        let mut index: String = String::new();
+        stdin()
+            .read_line(&mut index)
+            .expect("Failed to read line");
+
+        if let Ok(num) = index.trim().parse(){
+            let index: usize = num;
+            if (index >= 1) && (index <= 9) {
+                self.change_field(index);
+            }
+        };
+    }
 
     fn field(&self) -> String {
         let mut formatted_field: String = String::new();
@@ -60,9 +68,12 @@ impl Game {
         formatted_field
     }
 
-    // fn change_field(&mut self, index: usize) {
-    //     let x = index & 3;
-    //     let y = index / 3;
-    //     self.field[y][x] = Option::from("x".chars().next().unwrap());
-    // }
+    fn change_field(&mut self, index: usize) {
+        let x = (index - 1) % 3;
+        let y = (index - 1) / 3;
+        self.field[y][x] = match self.player_form {
+            Forms::Cross => Some(Forms::Cross),
+            Forms::Circle => Some(Forms::Circle),
+        };
+    }
 }
