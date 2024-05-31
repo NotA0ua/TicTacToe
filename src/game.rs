@@ -1,6 +1,7 @@
 use std::io::stdin;
 use std::iter::Iterator;
 use std::str::FromStr;
+use rand::Rng;
 
 pub fn build_game(form: Forms) -> Game {
     Game {
@@ -21,9 +22,12 @@ pub struct Game {
 
 impl Game {
     pub fn run(&mut self) {
-        loop {
+        'main: loop {
             self.draw();
             self.input();
+            // self.is_win(); // remove bot turn if player win
+            self.bot_turn();
+            // self.is_win(); // check bot win
         }
     }
 
@@ -45,10 +49,55 @@ impl Game {
         if let Ok(num) = index.trim().parse(){
             let index: usize = num;
             if (index >= 1) && (index <= 9) {
-                self.change_field(index);
+                self.change_field(index, match self.player_form {
+                    Forms::Cross => Some(Forms::Cross),
+                    Forms::Circle => Some(Forms::Circle),
+                }).unwrap();
             }
         };
     }
+
+    fn bot_turn(&mut self) {
+        loop {
+            let index: usize = rand::thread_rng().gen_range(1..=9);
+            let bot_form: Option<Forms> = match self.player_form {
+                Forms::Cross => Some(Forms::Circle),
+                Forms::Circle => Some(Forms::Cross),
+            };
+            match self.change_field(index, bot_form) {
+                Ok(_) => {break},
+                Err(_) => {continue},
+            }
+        }
+    }
+
+    // fn is_win(&self) {
+    //     for player in (Forms::Cross, Forms::Circle) {
+    //         for i in 0..3 {
+    //             if board[i][0] == player && board[i][1] == player && board[i][2] == player {
+    //                 return true;
+    //             }
+    //         }
+    //
+    //         // Check columns
+    //         for i in 0..3 {
+    //             if board[0][i] == player && board[1][i] == player && board[2][i] == player {
+    //                 return true;
+    //             }
+    //         }
+    //
+    //         // Check diagonals
+    //         if board[0][0] == player && board[1][1] == player && board[2][2] == player {
+    //             return true;
+    //         }
+    //
+    //         if board[0][2] == player && board[1][1] == player && board[2][0] == player {
+    //             return true;
+    //         }
+    //
+    //         false
+    //     }
+    // }
 
     fn field(&self) -> String {
         let mut formatted_field: String = String::new();
@@ -68,12 +117,14 @@ impl Game {
         formatted_field
     }
 
-    fn change_field(&mut self, index: usize) {
-        let x = (index - 1) % 3;
-        let y = (index - 1) / 3;
-        self.field[y][x] = match self.player_form {
-            Forms::Cross => Some(Forms::Cross),
-            Forms::Circle => Some(Forms::Circle),
+    fn change_field(&mut self, index: usize, form: Option<Forms>) -> Result<&str, &str>{
+        let x: usize = (index - 1) % 3;
+        let y: usize = (index - 1) / 3;
+        if self.field[y][x].is_none() {
+            self.field[y][x] = form;
+            return Ok("Success");
         };
+        return Err("Already taken");
+
     }
 }
