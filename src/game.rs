@@ -3,13 +3,19 @@ use std::iter::Iterator;
 use std::str::FromStr;
 use rand::Rng;
 
-pub fn build_game(form: Forms) -> Game {
+pub fn build_game() -> Game {
     Game {
         field: [[None, None, None], [None, None, None], [None, None, None]],
-        player_form: form
+        player_form: match rand::thread_rng().gen_range(1..=2) {
+            1 => Forms::Cross,
+            2 => Forms::Circle,
+            _ => Forms::Cross,
+        }
     }
 }
 
+#[derive(Clone, Copy)]
+#[derive(PartialEq)]
 pub enum Forms {
     Cross,
     Circle,
@@ -22,12 +28,30 @@ pub struct Game {
 
 impl Game {
     pub fn run(&mut self) {
-        'main: loop {
-            self.draw();
-            self.input();
-            // self.is_win(); // remove bot turn if player win
-            self.bot_turn();
-            // self.is_win(); // check bot win
+        if self.player_form == Forms::Cross{
+            loop {
+                self.draw();
+                self.input();
+                if self.win() { // remove bot turn if player win
+                    break;
+                };
+                self.bot_turn();
+                if self.win() { // check bot win
+                    break;
+                };
+            }
+        } else {
+            loop {
+                self.bot_turn();
+                if self.win() { // remove player turn if bot win
+                    break;
+                };
+                self.draw();
+                self.input();
+                if self.win() { // check bot win
+                    break;
+                };
+            }
         }
     }
 
@@ -71,33 +95,41 @@ impl Game {
         }
     }
 
-    // fn is_win(&self) {
-    //     for player in (Forms::Cross, Forms::Circle) {
-    //         for i in 0..3 {
-    //             if board[i][0] == player && board[i][1] == player && board[i][2] == player {
-    //                 return true;
-    //             }
-    //         }
-    //
-    //         // Check columns
-    //         for i in 0..3 {
-    //             if board[0][i] == player && board[1][i] == player && board[2][i] == player {
-    //                 return true;
-    //             }
-    //         }
-    //
-    //         // Check diagonals
-    //         if board[0][0] == player && board[1][1] == player && board[2][2] == player {
-    //             return true;
-    //         }
-    //
-    //         if board[0][2] == player && board[1][1] == player && board[2][0] == player {
-    //             return true;
-    //         }
-    //
-    //         false
-    //     }
-    // }
+    fn win(&self) -> bool {
+        let (result, player) = self.is_win();
+        let player = match player {
+            Forms::Cross => "x",
+            Forms::Circle => "o",
+        };
+        if result {
+            self.draw();
+            println!("{player} player won!");
+        }
+        result
+    }
+
+    fn is_win(&self) -> (bool, Forms) {
+        for player in [Forms::Cross, Forms::Circle]{
+            for i in 0..3 {
+                // Check rows and columns
+                if self.field[i][0] == Some(player) && self.field[i][1] == Some(player) && self.field[i][2] == Some(player) {
+                    return (true, player);
+                } else if self.field[0][i] == Some(player) && self.field[1][i] == Some(player) && self.field[2][i] == Some(player) {
+                    return (true, player);
+                }
+            }
+
+            // Check diagonals
+            if self.field[0][0] == Some(player) && self.field[1][1] == Some(player) && self.field[2][2] == Some(player) {
+                return (true, player);
+            }
+
+            if self.field[0][2] == Some(player) && self.field[1][1] == Some(player) && self.field[2][0] == Some(player) {
+                return (true, player);
+            }
+        }
+        return (false, Forms::Cross);
+    }
 
     fn field(&self) -> String {
         let mut formatted_field: String = String::new();
