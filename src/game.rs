@@ -1,7 +1,7 @@
+use rand::Rng;
 use std::io::stdin;
 use std::iter::Iterator;
 use std::str::FromStr;
-use rand::Rng;
 
 pub fn build_game() -> Game {
     Game {
@@ -10,12 +10,11 @@ pub fn build_game() -> Game {
             1 => Forms::Cross,
             2 => Forms::Circle,
             _ => Forms::Cross,
-        }
+        },
     }
 }
 
-#[derive(Clone, Copy)]
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Forms {
     Cross,
     Circle,
@@ -28,27 +27,31 @@ pub struct Game {
 
 impl Game {
     pub fn run(&mut self) {
-        if self.player_form == Forms::Cross{
+        if self.player_form == Forms::Cross {
             loop {
                 self.draw();
                 self.input();
-                if self.win() { // remove bot turn if player win
+                if self.win() {
+                    // remove bot turn if player win
                     break;
                 };
                 self.bot_turn();
-                if self.win() { // check bot win
+                if self.win() {
+                    // check bot win
                     break;
                 };
             }
         } else {
             loop {
                 self.bot_turn();
-                if self.win() { // remove player turn if bot win
+                if self.win() {
+                    // remove player turn if bot win
                     break;
                 };
                 self.draw();
                 self.input();
-                if self.win() { // check bot win
+                if self.win() {
+                    // check bot win
                     break;
                 };
             }
@@ -58,25 +61,30 @@ impl Game {
     fn draw(&self) {
         print!("{}[2J", 27 as char); // wipe terminal
         println!("{}", self.field());
-        println!("\n\nВ какую клетку вы хотите поставить {}?", match self.player_form {
-            Forms::Cross => "x",
-            Forms::Circle => "o",
-        });
+        println!(
+            "\n\nВ какую клетку вы хотите поставить {}?",
+            match self.player_form {
+                Forms::Cross => "x",
+                Forms::Circle => "o",
+            }
+        );
     }
 
     fn input(&mut self) {
         let mut index: String = String::new();
-        stdin()
-            .read_line(&mut index)
-            .expect("Failed to read line");
+        stdin().read_line(&mut index).expect("Failed to read line");
 
-        if let Ok(num) = index.trim().parse(){
+        if let Ok(num) = index.trim().parse() {
             let index: usize = num;
             if (index >= 1) && (index <= 9) {
-                self.change_field(index, match self.player_form {
-                    Forms::Cross => Some(Forms::Cross),
-                    Forms::Circle => Some(Forms::Circle),
-                }).unwrap();
+                self.change_field(
+                    index,
+                    match self.player_form {
+                        Forms::Cross => Some(Forms::Cross),
+                        Forms::Circle => Some(Forms::Circle),
+                    },
+                )
+                .unwrap();
             }
         };
     }
@@ -89,8 +97,8 @@ impl Game {
                 Forms::Circle => Some(Forms::Cross),
             };
             match self.change_field(index, bot_form) {
-                Ok(_) => {break},
-                Err(_) => {continue},
+                Ok(_) => break,
+                Err(_) => continue,
             }
         }
     }
@@ -109,22 +117,34 @@ impl Game {
     }
 
     fn is_win(&self) -> (bool, Forms) {
-        for player in [Forms::Cross, Forms::Circle]{
+        for player in [Forms::Cross, Forms::Circle] {
             for i in 0..3 {
                 // Check rows and columns
-                if self.field[i][0] == Some(player) && self.field[i][1] == Some(player) && self.field[i][2] == Some(player) {
+                if self.field[i][0] == Some(player)
+                    && self.field[i][1] == Some(player)
+                    && self.field[i][2] == Some(player)
+                {
                     return (true, player);
-                } else if self.field[0][i] == Some(player) && self.field[1][i] == Some(player) && self.field[2][i] == Some(player) {
+                } else if self.field[0][i] == Some(player)
+                    && self.field[1][i] == Some(player)
+                    && self.field[2][i] == Some(player)
+                {
                     return (true, player);
                 }
             }
 
             // Check diagonals
-            if self.field[0][0] == Some(player) && self.field[1][1] == Some(player) && self.field[2][2] == Some(player) {
+            if self.field[0][0] == Some(player)
+                && self.field[1][1] == Some(player)
+                && self.field[2][2] == Some(player)
+            {
                 return (true, player);
             }
 
-            if self.field[0][2] == Some(player) && self.field[1][1] == Some(player) && self.field[2][0] == Some(player) {
+            if self.field[0][2] == Some(player)
+                && self.field[1][1] == Some(player)
+                && self.field[2][0] == Some(player)
+            {
                 return (true, player);
             }
         }
@@ -140,7 +160,7 @@ impl Game {
                     Some(Forms::Cross) => char::from_str("x").unwrap(),
                     None => " ".chars().next().unwrap(),
                 });
-                if i < 2{
+                if i < 2 {
                     formatted_field.push_str("|");
                 }
             }
@@ -149,7 +169,7 @@ impl Game {
         formatted_field
     }
 
-    fn change_field(&mut self, index: usize, form: Option<Forms>) -> Result<&str, &str>{
+    fn change_field(&mut self, index: usize, form: Option<Forms>) -> Result<&str, &str> {
         let x: usize = (index - 1) % 3;
         let y: usize = (index - 1) / 3;
         if self.field[y][x].is_none() {
@@ -157,6 +177,5 @@ impl Game {
             return Ok("Success");
         };
         return Err("Already taken");
-
     }
 }
